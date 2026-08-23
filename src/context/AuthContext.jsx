@@ -178,6 +178,10 @@ export function AuthProvider({ children }) {
   // 2. Sign Up
   const signUp = async ({ email, password, fullName, role = 'patient', phone = '', emergencyContact = '', doctorName = '' }) => {
     if (isSupabaseConfigured && supabase) {
+      const avatarUrl = role === 'caregiver'
+        ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
+        : 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200';
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -188,13 +192,36 @@ export function AuthProvider({ children }) {
             phone: phone,
             emergency_contact: emergencyContact,
             doctor_name: doctorName,
-            avatar_url: role === 'caregiver'
-              ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
-              : 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'
+            avatar_url: avatarUrl
           }
         }
       });
+
       if (error) throw error;
+
+      if (data?.user) {
+        const fallbackProf = {
+          id: data.user.id,
+          email: data.user.email,
+          full_name: fullName,
+          role: role,
+          avatar_url: avatarUrl,
+          phone: phone,
+          emergency_contact: emergencyContact,
+          doctor_name: doctorName,
+          organizer_id: 'BOX-MED-8492'
+        };
+        setUser(data.user);
+        setProfile(fallbackProf);
+
+        // Try direct upsert as an extra fallback
+        try {
+          await supabase.from('profiles').upsert(fallbackProf);
+        } catch (upsertErr) {
+          // Trigger handles this, non-critical
+        }
+      }
+
       return data;
     } else {
       // Demo Sign Up
