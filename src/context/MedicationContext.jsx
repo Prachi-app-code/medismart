@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { INITIAL_MEDICATIONS, COMPARTMENTS } from '../utils/constants';
-import { generateInitialHistory, calculateAdherence } from '../utils/adherenceCalculator';
+import { COMPARTMENTS } from '../utils/constants';
+import { calculateAdherence } from '../utils/adherenceCalculator';
 import { audioChime } from '../utils/audioSynth';
 
 const MedicationContext = createContext();
@@ -11,9 +11,9 @@ export function MedicationProvider({ children }) {
   const [medications, setMedications] = useState(() => {
     try {
       const saved = localStorage.getItem('medi_medications');
-      return saved ? JSON.parse(saved) : INITIAL_MEDICATIONS;
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
-      return INITIAL_MEDICATIONS;
+      return [];
     }
   });
 
@@ -21,25 +21,7 @@ export function MedicationProvider({ children }) {
   const [todayDoses, setTodayDoses] = useState(() => {
     try {
       const saved = localStorage.getItem('medi_today_doses');
-      if (saved) return JSON.parse(saved);
-      
-      // Initialize from medications
-      return INITIAL_MEDICATIONS.map((med, idx) => ({
-        id: `dose_${med.id}_${idx}`,
-        medId: med.id,
-        name: med.name,
-        dosage: med.dosage,
-        form: med.form,
-        pillColor: med.pillColor || 'White',
-        pillShape: med.pillShape || 'round',
-        time: med.times[0] || '08:00',
-        compartment: med.compartment || 'Morning',
-        status: med.status || 'pending',
-        notes: med.notes,
-        instructions: med.instructions,
-        caregiverNotify: med.caregiverNotify,
-        confirmedAt: med.status === 'taken' ? '08:12 AM' : null
-      }));
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
       return [];
     }
@@ -49,23 +31,23 @@ export function MedicationProvider({ children }) {
   const [history, setHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('medi_history');
-      return saved ? JSON.parse(saved) : generateInitialHistory();
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
-      return generateInitialHistory();
+      return [];
     }
   });
 
   // 4. Smart Pill Organizer Hardware State
   const [organizerState, setOrganizerState] = useState({
     connected: true,
-    battery: 92,
+    battery: 100,
     syncStatus: 'Live (Bluetooth Low Energy 5.2)',
     lastSync: 'Just now',
     compartments: {
-      Morning: { lidOpen: false, ledStatus: 'completed', pillCount: 2, label: 'Morning (8:00 AM)' },
-      Afternoon: { lidOpen: false, ledStatus: 'active', pillCount: 1, label: 'Afternoon (1:00 PM)' },
-      Evening: { lidOpen: false, ledStatus: 'idle', pillCount: 1, label: 'Evening (6:00 PM)' },
-      Night: { lidOpen: false, ledStatus: 'idle', pillCount: 1, label: 'Night (9:30 PM)' },
+      Morning: { lidOpen: false, ledStatus: 'idle', pillCount: 0, label: 'Morning (8:00 AM)' },
+      Afternoon: { lidOpen: false, ledStatus: 'idle', pillCount: 0, label: 'Afternoon (1:00 PM)' },
+      Evening: { lidOpen: false, ledStatus: 'idle', pillCount: 0, label: 'Evening (6:00 PM)' },
+      Night: { lidOpen: false, ledStatus: 'idle', pillCount: 0, label: 'Night (9:30 PM)' },
     }
   });
 
@@ -105,13 +87,16 @@ export function MedicationProvider({ children }) {
         const compDoses = todayDoses.filter(d => d.compartment === comp);
         if (compDoses.length === 0) {
           updatedCompartments[comp].ledStatus = 'idle';
+          updatedCompartments[comp].pillCount = 0;
         } else if (compDoses.every(d => d.status === 'taken')) {
           updatedCompartments[comp].ledStatus = 'completed';
+          updatedCompartments[comp].pillCount = compDoses.length;
         } else if (compDoses.some(d => d.status === 'missed')) {
           updatedCompartments[comp].ledStatus = 'alert';
+          updatedCompartments[comp].pillCount = compDoses.length;
         } else if (compDoses.some(d => d.status === 'pending' || d.status === 'snoozed')) {
-          // Current next dose gets active green pulse
           updatedCompartments[comp].ledStatus = 'active';
+          updatedCompartments[comp].pillCount = compDoses.length;
         }
       });
       return { ...prev, compartments: updatedCompartments };
@@ -166,7 +151,7 @@ export function MedicationProvider({ children }) {
 
       // Check if all today's doses are taken for confetti celebration!
       const remainingDoses = todayDoses.filter(d => d.id !== doseId && d.status !== 'taken');
-      if (remainingDoses.length === 0) {
+      if (remainingDoses.length === 0 && todayDoses.length > 0) {
         confetti({
           particleCount: 80,
           spread: 70,
@@ -257,7 +242,6 @@ export function MedicationProvider({ children }) {
 
       if (willBeOpen) {
         audioChime.playReminder();
-        // If there's an active pending dose in this compartment, auto-confirm it as sensor detected!
         const matchingDose = todayDoses.find(d => d.compartment === compartmentName && (d.status === 'pending' || d.status === 'snoozed'));
         if (matchingDose) {
           setTimeout(() => {

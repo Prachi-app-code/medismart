@@ -2,14 +2,20 @@ import React from 'react';
 import { Printer, Download, FileText, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useCaregiverContext } from '../../context/CaregiverContext';
 import { useMedicationContext } from '../../context/MedicationContext';
+import { useAuth } from '../../context/AuthContext';
 import { useAdherence } from '../../hooks/useAdherence';
 import { formatDate } from '../../utils/dateHelpers';
 import Modal from '../shared/Modal';
 
 export default function ExportModal({ isOpen, onClose }) {
   const { activePatient } = useCaregiverContext();
-  const { medications, history, todayDoses } = useMedicationContext();
+  const { profile } = useAuth();
+  const { medications, history } = useMedicationContext();
   const { overallStats } = useAdherence();
+
+  const patientName = activePatient?.name || profile?.full_name || 'Patient';
+  const doctorName = activePatient?.doctor || profile?.doctor_name || 'General Practice';
+  const organizerId = activePatient?.organizerId || profile?.organizer_id || 'BOX-MED-8492';
 
   const handlePrint = () => {
     window.print();
@@ -25,7 +31,7 @@ export default function ExportModal({ isOpen, onClose }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `MediSmart_Report_${activePatient.name.replace(/\s+/g, '_')}_${formatDate(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.setAttribute('download', `MediSmart_Report_${patientName.replace(/\s+/g, '_')}_${formatDate(new Date(), 'yyyy-MM-dd')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -60,20 +66,20 @@ export default function ExportModal({ isOpen, onClose }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white p-4 rounded-2xl border border-slate-100 text-sm">
             <div>
               <span className="text-xs text-slate-400 font-bold uppercase">Patient</span>
-              <p className="font-bold text-text mt-0.5">{activePatient.name}</p>
-              <p className="text-xs text-slate-500">Age: {activePatient.age}</p>
+              <p className="font-bold text-text mt-0.5">{patientName}</p>
+              <p className="text-xs text-slate-500">{profile?.role || 'Patient'}</p>
             </div>
             <div>
               <span className="text-xs text-slate-400 font-bold uppercase">Physician</span>
-              <p className="font-bold text-text mt-0.5">{activePatient.doctor}</p>
+              <p className="font-bold text-text mt-0.5">{doctorName}</p>
             </div>
             <div>
               <span className="text-xs text-slate-400 font-bold uppercase">Smart Box ID</span>
-              <p className="font-bold text-primary-600 mt-0.5">{activePatient.organizerId}</p>
+              <p className="font-bold text-primary-600 mt-0.5">{organizerId}</p>
             </div>
             <div>
               <span className="text-xs text-slate-400 font-bold uppercase">Compliance Score</span>
-              <p className="font-black text-emerald-600 text-lg mt-0.5">{overallStats.rate}% (Grade A+)</p>
+              <p className="font-black text-emerald-600 text-lg mt-0.5">{overallStats.rate}%</p>
             </div>
           </div>
 
@@ -98,17 +104,23 @@ export default function ExportModal({ isOpen, onClose }) {
             <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
               Active Prescriptions ({medications.length})
             </h4>
-            <div className="space-y-1.5">
-              {medications.map(med => (
-                <div key={med.id} className="p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between text-xs sm:text-sm">
-                  <div>
-                    <strong className="text-text">{med.name}</strong> ({med.dosage} • {med.form})
-                    <span className="text-slate-500 ml-2">Slot: {med.compartment} ({med.times.join(', ')})</span>
+            {medications.length === 0 ? (
+              <p className="text-xs text-slate-400 italic p-3 bg-white rounded-xl border border-slate-100">
+                No active medications on record.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {medications.map(med => (
+                  <div key={med.id} className="p-3 bg-white rounded-xl border border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+                    <div>
+                      <strong className="text-text">{med.name}</strong> ({med.dosage} • {med.form})
+                      <span className="text-slate-500 ml-2">Slot: {med.compartment} ({med.times.join(', ')})</span>
+                    </div>
+                    <span className="text-slate-400 italic text-xs hidden sm:inline">{med.notes}</span>
                   </div>
-                  <span className="text-slate-400 italic text-xs hidden sm:inline">{med.notes}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Physician Signoff Note */}

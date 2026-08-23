@@ -2,17 +2,20 @@ import React from 'react';
 import { Sun, SunMedium, Sunset, Moon, PhoneCall, Volume2, Sparkles } from 'lucide-react';
 import { useCaregiverContext } from '../../context/CaregiverContext';
 import { useMedicationContext } from '../../context/MedicationContext';
+import { useAuth } from '../../context/AuthContext';
 import { getGreetingByTime, formatDate } from '../../utils/dateHelpers';
 import { useSpeech } from '../../hooks/useSpeech';
 
 export default function Greeting() {
-  const { activePatient, callEmergencyContact } = useCaregiverContext();
+  const { callEmergencyContact } = useCaregiverContext();
   const { todayDoses } = useMedicationContext();
+  const { profile } = useAuth();
   const { speak, isSpeaking } = useSpeech();
 
   const greeting = getGreetingByTime();
   const pendingDoses = todayDoses.filter(d => d.status === 'pending');
   const todayDateStr = formatDate(new Date(), 'EEEE, MMMM do, yyyy');
+  const userName = profile?.full_name || 'Welcome';
 
   const icons = {
     Sun: <Sun className="w-8 h-8 text-amber-500 animate-spin-slow" />,
@@ -22,10 +25,12 @@ export default function Greeting() {
   };
 
   const handleVoiceGuidance = () => {
-    if (pendingDoses.length === 0) {
-      speak(`Good day, ${activePatient.name}. All of your medications for today are complete! You are doing great.`);
+    if (todayDoses.length === 0) {
+      speak(`Hello ${userName}. You do not have any medications scheduled yet. Click Add Medication to begin.`);
+    } else if (pendingDoses.length === 0) {
+      speak(`Good day, ${userName}. All of your medications for today are complete! You are doing great.`);
     } else {
-      speak(`Hello ${activePatient.name}. Today is ${todayDateStr}. You have ${pendingDoses.length} dose${pendingDoses.length > 1 ? 's' : ''} left today. Your next medication is ${pendingDoses[0].name} scheduled for ${pendingDoses[0].compartment}.`);
+      speak(`Hello ${userName}. Today is ${todayDateStr}. You have ${pendingDoses.length} dose${pendingDoses.length > 1 ? 's' : ''} left today. Your next medication is ${pendingDoses[0].name} scheduled for ${pendingDoses[0].compartment}.`);
     }
   };
 
@@ -49,11 +54,15 @@ export default function Greeting() {
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-            {greeting.text}, {activePatient.name}!
+            {greeting.text}, {userName}!
           </h1>
 
           <p className="text-base sm:text-lg text-primary-100 font-medium leading-relaxed">
-            {pendingDoses.length === 0 ? (
+            {todayDoses.length === 0 ? (
+              <span>
+                No prescriptions scheduled for today. Click <strong className="text-white underline decoration-warning decoration-2">+ Add Med</strong> to setup your pill organizer.
+              </span>
+            ) : pendingDoses.length === 0 ? (
               <span className="inline-flex items-center gap-1.5 text-emerald-200 font-bold">
                 <Sparkles className="w-5 h-5 inline" /> Excellent adherence! You have completed all doses for today.
               </span>
@@ -80,7 +89,7 @@ export default function Greeting() {
           </button>
 
           <button
-            onClick={() => callEmergencyContact(activePatient.id)}
+            onClick={() => callEmergencyContact(profile?.id)}
             className="px-5 py-3 rounded-2xl bg-white text-primary-700 hover:bg-primary-50 font-bold text-sm sm:text-base flex items-center gap-2.5 transition-all shadow-md min-h-[48px]"
           >
             <PhoneCall className="w-5 h-5 text-danger" />

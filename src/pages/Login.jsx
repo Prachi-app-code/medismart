@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Pill, Mail, Lock, Eye, EyeOff, LogIn, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Pill, Mail, Lock, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, loginWithDemoRole, isConfigured } = useAuth();
+  const { signIn, isConfigured } = useAuth();
 
   const from = location.state?.from?.pathname || '/';
 
@@ -31,11 +31,6 @@ export default function Login() {
     }
   };
 
-  const handleDemoLogin = (roleKey) => {
-    loginWithDemoRole(roleKey);
-    navigate(from, { replace: true });
-  };
-
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-10 px-4 sm:px-6">
       <div className="max-w-md w-full space-y-6">
@@ -51,18 +46,6 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Backend Status Banner */}
-        <div className={`p-3.5 rounded-2xl border text-xs font-semibold flex items-center gap-2 ${
-          isConfigured 
-            ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
-            : 'bg-blue-50 text-primary-800 border-blue-200'
-        }`}>
-          <span className={`w-2.5 h-2.5 rounded-full ${isConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-primary-500'}`} />
-          <span>
-            {isConfigured ? 'Supabase Backend Connected (Live Cloud Auth)' : 'Demo Sandbox Mode Active (1-Click Login Available)'}
-          </span>
-        </div>
-
         {/* Error Alert */}
         {error && (
           <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2.5 animate-fadeIn">
@@ -70,49 +53,6 @@ export default function Login() {
             <span>{error}</span>
           </div>
         )}
-
-        {/* Quick Demo Logins */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-card space-y-3">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
-            <Sparkles className="w-4 h-4 text-primary-500" />
-            <span>Instant Demo Accounts (Click to Test)</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('patient')}
-              className="p-3 bg-slate-50 hover:bg-primary-50 hover:border-primary-300 border border-slate-200 rounded-2xl text-center transition-all group min-h-[44px]"
-            >
-              <span className="text-lg block">👵</span>
-              <span className="text-xs font-bold text-slate-700 group-hover:text-primary-700 block mt-0.5">
-                Patient
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('caregiver')}
-              className="p-3 bg-slate-50 hover:bg-primary-50 hover:border-primary-300 border border-slate-200 rounded-2xl text-center transition-all group min-h-[44px]"
-            >
-              <span className="text-lg block">👩‍⚕️</span>
-              <span className="text-xs font-bold text-slate-700 group-hover:text-primary-700 block mt-0.5">
-                Caregiver
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleDemoLogin('doctor')}
-              className="p-3 bg-slate-50 hover:bg-primary-50 hover:border-primary-300 border border-slate-200 rounded-2xl text-center transition-all group min-h-[44px]"
-            >
-              <span className="text-lg block">👨‍⚕️</span>
-              <span className="text-xs font-bold text-slate-700 group-hover:text-primary-700 block mt-0.5">
-                Doctor
-              </span>
-            </button>
-          </div>
-        </div>
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-card space-y-5">

@@ -29,45 +29,7 @@ export function calculateAdherence(doses = []) {
 }
 
 export function generateInitialHistory() {
-  const history = [];
-  const baseDate = new Date(); // e.g. Aug 23, 2026
-
-  const pastMeds = [
-    { name: 'Amlodipine 5mg', compartment: 'Morning', time: '08:00' },
-    { name: 'Metformin HCl 500mg', compartment: 'Morning', time: '08:00' },
-    { name: 'Vitamin D3 1000 IU', compartment: 'Afternoon', time: '13:00' },
-    { name: 'Metformin HCl 500mg', compartment: 'Evening', time: '18:00' },
-    { name: 'Atorvastatin 20mg', compartment: 'Night', time: '21:30' }
-  ];
-
-  for (let i = 1; i <= 14; i++) {
-    const targetDate = subDays(baseDate, i);
-    const dateStr = format(targetDate, 'yyyy-MM-dd');
-
-    pastMeds.forEach((med, idx) => {
-      // 92% adherence rate simulation with occasional missed dose
-      const isMissed = (i === 3 && idx === 3) || (i === 9 && idx === 4);
-      const status = isMissed ? 'missed' : 'taken';
-      
-      const loggedTime = isMissed 
-        ? null 
-        : `${med.time.split(':')[0]}:${String(Math.floor(Math.random() * 15) + 5).padStart(2, '0')}`;
-
-      history.push({
-        id: `hist_${i}_${idx}`,
-        medName: med.name,
-        date: dateStr,
-        scheduledTime: med.time,
-        loggedTime: loggedTime ? `${dateStr}T${loggedTime}:00` : null,
-        status: status,
-        compartment: med.compartment,
-        notes: isMissed ? 'Patient was out for clinic visit' : 'Confirmed via Smart Pillbox sensor',
-        confirmedBy: isMissed ? 'Escalation Alert' : 'Smart Pillbox Sensor'
-      });
-    });
-  }
-
-  return history;
+  return [];
 }
 
 export function getWeeklyTrend(history = [], todayDoses = []) {

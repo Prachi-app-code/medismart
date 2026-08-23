@@ -152,7 +152,7 @@ export default function Register() {
               <input
                 type="text"
                 required
-                placeholder="e.g. Margaret Vance"
+                placeholder="e.g. Jane Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-base focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none min-h-[44px]"
@@ -203,7 +203,7 @@ export default function Register() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Sarah Vance (Daughter) - +1 (555) 987-6543"
+                placeholder="e.g. John Doe (Family) - +1 (555) 000-0000"
                 value={emergencyContact}
                 onChange={(e) => setEmergencyContact(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none min-h-[44px]"
@@ -216,7 +216,7 @@ export default function Register() {
               </label>
               <input
                 type="text"
-                placeholder="e.g. Dr. Robert Chen (Cardiology Dept)"
+                placeholder="e.g. Cardiology Department / General Practice"
                 value={doctorName}
                 onChange={(e) => setDoctorName(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-primary-500 outline-none min-h-[44px]"

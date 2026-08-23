@@ -3,43 +3,6 @@ import { supabase, isSupabaseConfigured } from '../utils/supabaseClient';
 
 const AuthContext = createContext();
 
-// Preset Demo Profiles for instant testing
-const DEMO_PROFILES = {
-  patient: {
-    id: 'demo_patient_001',
-    email: 'margaret.vance@medismart.io',
-    full_name: 'Margaret Vance',
-    role: 'patient',
-    avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    phone: '+1 (555) 234-8901',
-    emergency_contact: 'Sarah Vance (Daughter) - +1 (555) 987-6543',
-    doctor_name: 'Dr. Robert Chen (Cardiology)',
-    organizer_id: 'BOX-MED-8492'
-  },
-  caregiver: {
-    id: 'demo_caregiver_001',
-    email: 'sarah.vance@medismart.io',
-    full_name: 'Dr. Sarah Vance, RN',
-    role: 'caregiver',
-    avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200',
-    phone: '+1 (555) 987-6543',
-    emergency_contact: '+1 (555) 123-4567',
-    doctor_name: 'Licensed Registered Nurse',
-    organizer_id: 'CAREGIVER-HUB-01'
-  },
-  doctor: {
-    id: 'demo_doctor_001',
-    email: 'dr.chen@medismart.io',
-    full_name: 'Dr. Robert Chen, MD',
-    role: 'doctor',
-    avatar_url: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=200',
-    phone: '+1 (555) 888-9999',
-    emergency_contact: 'St. Jude General Hospital',
-    doctor_name: 'Chief of Cardiology',
-    organizer_id: 'CLINIC-DESK-4'
-  }
-};
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -63,13 +26,12 @@ export function AuthProvider({ children }) {
       if (data) {
         return data;
       } else if (userMetadata) {
-        // Construct temporary profile from metadata if DB trigger hasn't fired yet
         return {
           id: userId,
           email: userMetadata.email || '',
           full_name: userMetadata.full_name || 'User',
           role: userMetadata.role || 'patient',
-          avatar_url: userMetadata.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+          avatar_url: userMetadata.avatar_url || null,
           phone: userMetadata.phone || '',
           emergency_contact: userMetadata.emergency_contact || '',
           doctor_name: userMetadata.doctor_name || '',
@@ -84,6 +46,11 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
+    // Clear any legacy demo mock session from storage
+    try {
+      localStorage.removeItem('medi_mock_user');
+    } catch (e) {}
+
     if (isSupabaseConfigured && supabase) {
       // Check active Supabase session
       supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -93,18 +60,12 @@ export function AuthProvider({ children }) {
           const userProf = await fetchProfile(session.user.id, session.user.user_metadata);
           setProfile(userProf);
         } else {
-          // Check if user had a saved mock session
-          const savedMock = localStorage.getItem('medi_mock_user');
-          if (savedMock) {
-            const parsed = JSON.parse(savedMock);
-            setUser({ id: parsed.id, email: parsed.email });
-            setProfile(parsed);
-          }
+          setProfile(null);
         }
         setLoading(false);
       });
 
-      // Listen for auth changes
+      // Listen for auth state changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
@@ -121,24 +82,9 @@ export function AuthProvider({ children }) {
         subscription.unsubscribe();
       };
     } else {
-      // Local Demo Mode (defaulting to saved mock or Margaret Vance)
-      try {
-        const savedMock = localStorage.getItem('medi_mock_user');
-        if (savedMock) {
-          const parsed = JSON.parse(savedMock);
-          setUser({ id: parsed.id, email: parsed.email });
-          setProfile(parsed);
-        } else {
-          // Default initial demo state
-          const defaultDemo = DEMO_PROFILES.patient;
-          setUser({ id: defaultDemo.id, email: defaultDemo.email });
-          setProfile(defaultDemo);
-          localStorage.setItem('medi_mock_user', JSON.stringify(defaultDemo));
-        }
-      } catch (e) {
-        setUser({ id: DEMO_PROFILES.patient.id, email: DEMO_PROFILES.patient.email });
-        setProfile(DEMO_PROFILES.patient);
-      }
+      // Offline / No active user
+      setUser(null);
+      setProfile(null);
       setLoading(false);
     }
   }, []);
@@ -152,36 +98,17 @@ export function AuthProvider({ children }) {
       });
       if (error) throw error;
       const userProf = await fetchProfile(data.user.id, data.user.user_metadata);
+      setUser(data.user);
       setProfile(userProf);
       return data;
     } else {
-      // Demo / Mock Sign In logic
-      let matchedProfile = DEMO_PROFILES.patient;
-      if (email.toLowerCase().includes('caregiver') || email.toLowerCase().includes('sarah')) {
-        matchedProfile = DEMO_PROFILES.caregiver;
-      } else if (email.toLowerCase().includes('doctor') || email.toLowerCase().includes('chen')) {
-        matchedProfile = DEMO_PROFILES.doctor;
-      } else {
-        matchedProfile = {
-          ...DEMO_PROFILES.patient,
-          email: email,
-          full_name: email.split('@')[0].replace('.', ' ').toUpperCase()
-        };
-      }
-      setUser({ id: matchedProfile.id, email: matchedProfile.email });
-      setProfile(matchedProfile);
-      localStorage.setItem('medi_mock_user', JSON.stringify(matchedProfile));
-      return { user: { id: matchedProfile.id, email: matchedProfile.email } };
+      throw new Error('Supabase backend not configured. Please add your credentials to .env file.');
     }
   };
 
   // 2. Sign Up
   const signUp = async ({ email, password, fullName, role = 'patient', phone = '', emergencyContact = '', doctorName = '' }) => {
     if (isSupabaseConfigured && supabase) {
-      const avatarUrl = role === 'caregiver'
-        ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200'
-        : 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200';
-
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -191,8 +118,7 @@ export function AuthProvider({ children }) {
             role: role,
             phone: phone,
             emergency_contact: emergencyContact,
-            doctor_name: doctorName,
-            avatar_url: avatarUrl
+            doctor_name: doctorName
           }
         }
       });
@@ -200,23 +126,22 @@ export function AuthProvider({ children }) {
       if (error) throw error;
 
       if (data?.user) {
-        const fallbackProf = {
+        const userProf = {
           id: data.user.id,
           email: data.user.email,
           full_name: fullName,
           role: role,
-          avatar_url: avatarUrl,
+          avatar_url: null,
           phone: phone,
           emergency_contact: emergencyContact,
           doctor_name: doctorName,
           organizer_id: 'BOX-MED-8492'
         };
         setUser(data.user);
-        setProfile(fallbackProf);
+        setProfile(userProf);
 
-        // Try direct upsert as an extra fallback
         try {
-          await supabase.from('profiles').upsert(fallbackProf);
+          await supabase.from('profiles').upsert(userProf);
         } catch (upsertErr) {
           // Trigger handles this, non-critical
         }
@@ -224,22 +149,7 @@ export function AuthProvider({ children }) {
 
       return data;
     } else {
-      // Demo Sign Up
-      const newMock = {
-        id: `user_${Date.now()}`,
-        email: email,
-        full_name: fullName,
-        role: role,
-        avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
-        phone: phone,
-        emergency_contact: emergencyContact,
-        doctor_name: doctorName,
-        organizer_id: `BOX-MED-${Math.floor(1000 + Math.random() * 9000)}`
-      };
-      setUser({ id: newMock.id, email: newMock.email });
-      setProfile(newMock);
-      localStorage.setItem('medi_mock_user', JSON.stringify(newMock));
-      return { user: newMock };
+      throw new Error('Supabase backend not configured. Please add your credentials to .env file.');
     }
   };
 
@@ -248,13 +158,12 @@ export function AuthProvider({ children }) {
     if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
-    localStorage.removeItem('medi_mock_user');
     setUser(null);
     setProfile(null);
     setSession(null);
   };
 
-  // 4. Reset Password (Forgot Password email)
+  // 4. Reset Password
   const resetPassword = async (email) => {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
@@ -263,8 +172,7 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       return data;
     } else {
-      // Mock reset response
-      return { message: 'Password reset link sent (demo simulation)' };
+      throw new Error('Supabase backend not configured.');
     }
   };
 
@@ -277,16 +185,8 @@ export function AuthProvider({ children }) {
       if (error) throw error;
       return data;
     } else {
-      return { message: 'Password updated successfully (demo simulation)' };
+      throw new Error('Supabase backend not configured.');
     }
-  };
-
-  // 6. Demo Quick-Login Helper
-  const loginWithDemoRole = (roleKey = 'patient') => {
-    const target = DEMO_PROFILES[roleKey] || DEMO_PROFILES.patient;
-    setUser({ id: target.id, email: target.email });
-    setProfile(target);
-    localStorage.setItem('medi_mock_user', JSON.stringify(target));
   };
 
   return (
@@ -301,8 +201,7 @@ export function AuthProvider({ children }) {
         signUp,
         signOut,
         resetPassword,
-        updatePassword,
-        loginWithDemoRole
+        updatePassword
       }}
     >
       {children}

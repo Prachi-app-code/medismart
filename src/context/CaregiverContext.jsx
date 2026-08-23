@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react';
-import { INITIAL_PATIENTS } from '../utils/constants';
 import { audioChime } from '../utils/audioSynth';
 import { useMedicationContext } from './MedicationContext';
 
@@ -7,43 +6,11 @@ const CaregiverContext = createContext();
 
 export function CaregiverProvider({ children }) {
   const { addToast } = useMedicationContext();
-  const [patients, setPatients] = useState(INITIAL_PATIENTS);
-  const [activePatientId, setActivePatientId] = useState('pat_001');
+  const [patients, setPatients] = useState([]);
+  const [activePatientId, setActivePatientId] = useState(null);
+  const [alerts, setAlerts] = useState([]);
 
-  const [alerts, setAlerts] = useState([
-    {
-      id: 'alt_001',
-      patientId: 'pat_002',
-      patientName: 'Arthur Vance',
-      severity: 'high',
-      time: '35 mins ago',
-      title: 'Missed Dose Alert',
-      message: 'Morning Lisinopril (10mg) not taken. Organizer lid was not opened.',
-      actionTaken: false
-    },
-    {
-      id: 'alt_002',
-      patientId: 'pat_001',
-      patientName: 'Margaret Vance',
-      severity: 'medium',
-      time: '2 hours ago',
-      title: 'Low Compartment Supply',
-      message: 'Afternoon compartment only has 2 days of Vitamin D3 remaining.',
-      actionTaken: false
-    },
-    {
-      id: 'alt_003',
-      patientId: 'pat_003',
-      patientName: 'Eleanor Brooks',
-      severity: 'low',
-      time: '4 hours ago',
-      title: 'Organizer Battery Check',
-      message: 'Smart pillbox battery is at 85%. Operating normally.',
-      actionTaken: true
-    }
-  ]);
-
-  const activePatient = patients.find(p => p.id === activePatientId) || patients[0];
+  const activePatient = patients.find(p => p.id === activePatientId) || patients[0] || null;
 
   const switchPatient = (patientId) => {
     setActivePatientId(patientId);
@@ -57,7 +24,7 @@ export function CaregiverProvider({ children }) {
     const p = patients.find(pat => pat.id === patientId) || activePatient;
     audioChime.playReminder();
     addToast(
-      customMessage || `Chime reminder & push notification dispatched to ${p.name}'s Smart Pillbox (${p.organizerId}).`,
+      customMessage || `Chime reminder & push notification dispatched to ${p ? p.name : 'patient'}'s Smart Pillbox.`,
       'success',
       'Reminder Dispatched'
     );
@@ -65,7 +32,11 @@ export function CaregiverProvider({ children }) {
 
   const callEmergencyContact = (patientId) => {
     const p = patients.find(pat => pat.id === patientId) || activePatient;
-    addToast(`Initiating emergency contact call to ${p.emergencyContact}...`, 'warning', 'Emergency Call');
+    if (p && p.emergencyContact) {
+      addToast(`Initiating emergency contact call to ${p.emergencyContact}...`, 'warning', 'Emergency Call');
+    } else {
+      addToast('No emergency contact number configured yet.', 'info', 'Emergency Contact');
+    }
   };
 
   const dismissAlert = (alertId) => {
@@ -83,9 +54,11 @@ export function CaregiverProvider({ children }) {
     <CaregiverContext.Provider
       value={{
         patients,
+        setPatients,
         activePatient,
         activePatientId,
         alerts,
+        setAlerts,
         switchPatient,
         sendPatientReminder,
         callEmergencyContact,

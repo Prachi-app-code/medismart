@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, Flashlight, RefreshCw, Sparkles, Scan, CheckCircle2, X } from 'lucide-react';
-import { SAMPLE_BARCODES } from '../../utils/constants';
+import React, { useState } from 'react';
+import { Flashlight, CheckCircle2, Scan } from 'lucide-react';
 import { audioChime } from '../../utils/audioSynth';
 
 export default function QRScanner({ onScanComplete, onClose }) {
@@ -9,32 +8,30 @@ export default function QRScanner({ onScanComplete, onClose }) {
   const [scannedMed, setScannedMed] = useState(null);
   const [manualCode, setManualCode] = useState('');
 
-  const handleSelectPreset = (sample) => {
-    setScanning(false);
-    setScannedMed(sample);
-    audioChime.playSuccess();
-    setTimeout(() => {
-      onScanComplete(sample);
-    }, 900);
-  };
-
   const handleManualSubmit = (e) => {
     e.preventDefault();
-    if (!manualCode) return;
-    const match = SAMPLE_BARCODES.find(s => s.barcode === manualCode.trim()) || {
-      barcode: manualCode,
-      name: `Prescription #${manualCode.slice(-4)}`,
+    if (!manualCode.trim()) return;
+    
+    const detectedMed = {
+      barcode: manualCode.trim(),
+      name: `Prescription #${manualCode.trim().slice(-4)}`,
       dosage: '10mg',
       form: 'Tablet',
       pillColor: 'White',
       pillShape: 'round',
       times: ['08:00'],
-      notes: 'Take with water after meal',
+      notes: 'Take with water after breakfast',
       compartment: 'Morning',
-      instructions: 'Auto-detected from barcode database.',
+      instructions: 'Scanned from prescription package barcode.',
       caregiverNotify: true
     };
-    handleSelectPreset(match);
+
+    setScanning(false);
+    setScannedMed(detectedMed);
+    audioChime.playSuccess();
+    setTimeout(() => {
+      onScanComplete(detectedMed);
+    }, 900);
   };
 
   return (
@@ -90,40 +87,11 @@ export default function QRScanner({ onScanComplete, onClose }) {
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px]" />
       </div>
 
-      {/* Demo Presets (1-Click Test Scans) */}
-      <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
-          <Sparkles className="w-4 h-4 text-primary-500" />
-          <span>Quick Demo Test Barcodes (Click to Auto-Scan)</span>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {SAMPLE_BARCODES.map(sample => (
-            <button
-              key={sample.barcode}
-              type="button"
-              onClick={() => handleSelectPreset(sample)}
-              className="text-left p-3 bg-white hover:bg-primary-50 border border-slate-200 hover:border-primary-300 rounded-xl transition-all flex items-center justify-between group shadow-2xs min-h-[44px]"
-            >
-              <div>
-                <div className="text-sm font-bold text-text group-hover:text-primary-600">
-                  {sample.name} ({sample.dosage})
-                </div>
-                <div className="text-xs text-slate-400 font-mono">
-                  UPC: {sample.barcode} • {sample.compartment}
-                </div>
-              </div>
-              <Scan className="w-4 h-4 text-slate-400 group-hover:text-primary-500" />
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Manual Barcode Input Fallback */}
       <form onSubmit={handleManualSubmit} className="flex gap-2">
         <input
           type="text"
-          placeholder="Or enter 12-digit barcode UPC number manually..."
+          placeholder="Enter prescription barcode / NDC number..."
           value={manualCode}
           onChange={(e) => setManualCode(e.target.value)}
           className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
@@ -132,7 +100,8 @@ export default function QRScanner({ onScanComplete, onClose }) {
           type="submit"
           className="btn-primary text-sm px-5 py-3 min-h-[44px]"
         >
-          Lookup
+          <Scan className="w-4 h-4" />
+          <span>Lookup</span>
         </button>
       </form>
 

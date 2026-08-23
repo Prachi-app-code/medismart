@@ -25,8 +25,14 @@ export default function TodaySchedule() {
       </div>
 
       {todayDoses.length === 0 ? (
-        <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
           <p className="text-slate-500 font-medium">No medications scheduled for today.</p>
+          <a
+            href="/add"
+            className="btn-primary text-xs sm:text-sm px-4 py-2 inline-flex items-center gap-1.5"
+          >
+            <span>+ Add Your First Medication</span>
+          </a>
         </div>
       ) : (
         <div className="space-y-4">

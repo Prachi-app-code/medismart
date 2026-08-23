@@ -1,12 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Calendar, PlusCircle, History, Users, ShieldAlert, Cpu, HeartPulse } from 'lucide-react';
+import { Home, Calendar, PlusCircle, History, Users, Cpu, HeartPulse } from 'lucide-react';
 import { useCaregiverContext } from '../../context/CaregiverContext';
 import { useMedicationContext } from '../../context/MedicationContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Sidebar({ onOpenSimulator }) {
-  const { alerts, activePatient } = useCaregiverContext();
+  const { alerts } = useCaregiverContext();
   const { adherence } = useMedicationContext();
+  const { user, profile } = useAuth();
   const unreadAlerts = alerts.filter(a => !a.actionTaken).length;
 
   const links = [
@@ -17,26 +19,36 @@ export default function Sidebar({ onOpenSimulator }) {
     { to: '/caregiver', label: 'Caregiver Portal', icon: Users, badge: unreadAlerts }
   ];
 
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <aside aria-label="Desktop Sidebar" className="hidden md:flex flex-col w-64 lg:w-72 bg-white border-r border-slate-200/80 min-h-[calc(100vh-80px)] p-5 justify-between">
       <div className="space-y-6">
         
-        {/* Active Patient Card Badge */}
-        <div className="bg-gradient-to-br from-primary-50 to-blue-50/50 p-4 rounded-2xl border border-primary-100 flex items-center gap-3">
-          <img
-            src={activePatient.avatar}
-            alt={activePatient.name}
-            className="w-12 h-12 rounded-xl object-cover ring-2 ring-primary-500 shadow-sm"
-          />
-          <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-text text-sm truncate">{activePatient.name}</h3>
-            <p className="text-xs text-slate-500">{activePatient.age} yrs • {activePatient.relation}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span className="text-[11px] font-semibold text-emerald-700">Adherence: {adherence.percentage}%</span>
+        {/* Active User Card Badge */}
+        {profile && (
+          <div className="bg-gradient-to-br from-primary-50 to-blue-50/50 p-4 rounded-2xl border border-primary-100 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white font-bold text-base flex items-center justify-center shadow-xs flex-shrink-0">
+              {getInitials(profile.full_name)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-text text-sm truncate">{profile.full_name}</h3>
+              <p className="text-xs text-slate-500 capitalize">{profile.role} Account</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span className="text-[11px] font-semibold text-emerald-700">Adherence: {adherence.percentage}%</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Nav Links */}
         <nav className="space-y-1.5">
@@ -87,7 +99,7 @@ export default function Sidebar({ onOpenSimulator }) {
 
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-2.5 text-xs text-slate-500">
           <HeartPulse className="w-4 h-4 text-primary-500 flex-shrink-0" />
-          <span>WCAG 2.1 AA Compliant • Senior Mode Active</span>
+          <span>WCAG 2.1 AA Compliant</span>
         </div>
       </div>
     </aside>

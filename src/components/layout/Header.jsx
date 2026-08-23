@@ -1,24 +1,21 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Pill, Cpu, Volume2, ChevronDown, CheckCircle, LogOut, User, Sparkles, LogIn } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Pill, Cpu, Volume2, ChevronDown, LogOut, User, LogIn } from 'lucide-react';
 import { useMedicationContext } from '../../context/MedicationContext';
-import { useCaregiverContext } from '../../context/CaregiverContext';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Header({ onOpenSimulator }) {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut, loginWithDemoRole, isConfigured } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { todayDoses } = useMedicationContext();
-  const { patients, activePatient, switchPatient } = useCaregiverContext();
   const { speak, isSpeaking } = useSpeech();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const pendingDoses = todayDoses.filter(d => d.status === 'pending');
 
   const handleReadSummary = () => {
-    const name = profile?.full_name || activePatient.name;
+    const name = profile?.full_name || 'User';
     if (pendingDoses.length === 0) {
       speak(`Hello ${name}. All of your medications for today are taken! Great job.`);
     } else {
@@ -37,6 +34,16 @@ export default function Header({ onOpenSimulator }) {
     patient: 'bg-emerald-50 text-emerald-800 border-emerald-200',
     caregiver: 'bg-blue-50 text-primary-800 border-blue-200',
     doctor: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -94,7 +101,7 @@ export default function Header({ onOpenSimulator }) {
               <Cpu className="w-4 h-4 text-emerald-600 hidden sm:inline" />
               <span className="hidden sm:inline">Pillbox: <strong className="text-emerald-900">{profile?.organizer_id || 'BOX-8492'}</strong></span>
               <span className="text-xs bg-emerald-200/70 text-emerald-900 px-2 py-0.5 rounded-full font-bold ml-1">
-                92%
+                100%
               </span>
             </button>
 
@@ -107,19 +114,17 @@ export default function Header({ onOpenSimulator }) {
                   aria-haspopup="true"
                   aria-expanded={userDropdownOpen}
                 >
-                  <img
-                    src={profile?.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'}
-                    alt={profile?.full_name || 'User'}
-                    className="w-9 h-9 rounded-xl object-cover ring-2 ring-primary-400 shadow-2xs"
-                  />
+                  <div className="w-9 h-9 rounded-xl bg-primary-600 text-white font-bold text-sm flex items-center justify-center ring-2 ring-primary-300 shadow-2xs">
+                    {getInitials(profile?.full_name || user?.email)}
+                  </div>
                   <div className="text-left hidden lg:block pr-1">
                     <div className="flex items-center gap-1.5">
                       <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded border ${roleBadges[profile?.role || 'patient']}`}>
                         {profile?.role || 'Patient'}
                       </span>
                     </div>
-                    <div className="text-sm font-bold text-text leading-tight mt-0.5 max-w-[120px] truncate">
-                      {profile?.full_name || 'User'}
+                    <div className="text-sm font-bold text-text leading-tight mt-0.5 max-w-[130px] truncate">
+                      {profile?.full_name || user?.email || 'Account'}
                     </div>
                   </div>
                   <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
@@ -135,13 +140,11 @@ export default function Header({ onOpenSimulator }) {
                       
                       {/* User Info Header */}
                       <div className="px-4 py-2 border-b border-slate-100 flex items-center gap-3">
-                        <img
-                          src={profile?.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'}
-                          alt={profile?.full_name}
-                          className="w-11 h-11 rounded-2xl object-cover ring-2 ring-primary-500"
-                        />
+                        <div className="w-11 h-11 rounded-2xl bg-primary-600 text-white font-bold text-base flex items-center justify-center shadow-sm">
+                          {getInitials(profile?.full_name || user?.email)}
+                        </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-text truncate">{profile?.full_name}</p>
+                          <p className="text-sm font-bold text-text truncate">{profile?.full_name || 'My Account'}</p>
                           <p className="text-xs text-slate-400 truncate">{profile?.email || user?.email}</p>
                           <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border inline-block mt-1 ${roleBadges[profile?.role || 'patient']}`}>
                             {profile?.role || 'Patient'} Account
@@ -149,48 +152,8 @@ export default function Header({ onOpenSimulator }) {
                         </div>
                       </div>
 
-                      {/* Quick Switch Demo Roles */}
-                      <div className="px-3 py-1">
-                        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-primary-500" />
-                          <span>Switch Demo Role</span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              loginWithDemoRole('patient');
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-center hover:bg-primary-50 rounded-xl transition-colors text-xs font-semibold text-slate-700"
-                          >
-                            👵 Patient
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              loginWithDemoRole('caregiver');
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-center hover:bg-primary-50 rounded-xl transition-colors text-xs font-semibold text-slate-700"
-                          >
-                            👩‍⚕️ Caregiver
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              loginWithDemoRole('doctor');
-                              setUserDropdownOpen(false);
-                            }}
-                            className="p-1.5 text-center hover:bg-primary-50 rounded-xl transition-colors text-xs font-semibold text-slate-700"
-                          >
-                            👨‍⚕️ Doctor
-                          </button>
-                        </div>
-                      </div>
-
                       {/* Navigation Link */}
-                      <div className="border-t border-slate-100 pt-2 px-2">
+                      <div className="pt-1 px-2">
                         <Link
                           to="/caregiver"
                           onClick={() => setUserDropdownOpen(false)}
