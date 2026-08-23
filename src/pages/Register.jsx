@@ -52,10 +52,9 @@ export default function Register() {
         setSuccessMessage('Account created successfully! Redirecting to your dashboard...');
       }
 
-      setSuccess(true);
       setTimeout(() => {
         navigate(data?.session || !isConfigured ? '/' : '/login');
-      }, 2000);
+      }, 1800);
     } catch (err) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
