@@ -331,7 +331,7 @@ export default function MedicationForm({ existingMed, onSaveComplete }) {
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         title="Scan Prescription Barcode / QR"
-        subtitle="Point camera at medication box or pick a demo sample below"
+        subtitle="Point your device camera at the barcode or upload a prescription photo"
       >
         <QRScanner
           onScanComplete={handleScanFill}
