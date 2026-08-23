@@ -7,11 +7,24 @@ import { audioChime } from '../utils/audioSynth';
 const MedicationContext = createContext();
 
 export function MedicationProvider({ children }) {
+  // Helper to identify legacy demo items
+  const isDemoMed = (item) => {
+    if (!item) return false;
+    const name = (item.name || item.medName || '').toLowerCase();
+    const id = String(item.id || item.medId || '').toLowerCase();
+    return id.startsWith('med_00') || id.startsWith('dose_med_00') || id.startsWith('hist_') ||
+           name.includes('amlodipine') || name.includes('metformin') || name.includes('atorvastatin') || name.includes('vitamin d3');
+  };
+
   // 1. Medications list
   const [medications, setMedications] = useState(() => {
     try {
       const saved = localStorage.getItem('medi_medications');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      const filtered = Array.isArray(parsed) ? parsed.filter(m => !isDemoMed(m)) : [];
+      localStorage.setItem('medi_medications', JSON.stringify(filtered));
+      return filtered;
     } catch (e) {
       return [];
     }
@@ -21,7 +34,11 @@ export function MedicationProvider({ children }) {
   const [todayDoses, setTodayDoses] = useState(() => {
     try {
       const saved = localStorage.getItem('medi_today_doses');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      const filtered = Array.isArray(parsed) ? parsed.filter(d => !isDemoMed(d)) : [];
+      localStorage.setItem('medi_today_doses', JSON.stringify(filtered));
+      return filtered;
     } catch (e) {
       return [];
     }
@@ -31,7 +48,11 @@ export function MedicationProvider({ children }) {
   const [history, setHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('medi_history');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      const filtered = Array.isArray(parsed) ? parsed.filter(h => !isDemoMed(h)) : [];
+      localStorage.setItem('medi_history', JSON.stringify(filtered));
+      return filtered;
     } catch (e) {
       return [];
     }
