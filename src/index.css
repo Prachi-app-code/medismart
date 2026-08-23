@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Accessibility: Focus visible */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-text font-sans antialiased;
+    font-size: 16px;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Accessible senior-friendly tap highlight */
+  button, a, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 text-white px-6 py-3 rounded-xl font-semibold 
+           hover:bg-primary-600 active:scale-[0.98] transition-all duration-200
+           focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 shadow-sm
+           inline-flex items-center justify-center gap-2;
+    min-height: 44px;
+  }
+  
+  .btn-success {
+    @apply bg-success text-white px-6 py-3 rounded-xl font-semibold 
+           hover:bg-success/90 active:scale-[0.98] transition-all duration-200
+           focus:ring-2 focus:ring-success focus:ring-offset-2 shadow-sm
+           inline-flex items-center justify-center gap-2;
+    min-height: 44px;
+  }
+  
+  .btn-danger {
+    @apply bg-danger text-white px-6 py-3 rounded-xl font-semibold 
+           hover:bg-danger/90 active:scale-[0.98] transition-all duration-200
+           focus:ring-2 focus:ring-danger focus:ring-offset-2 shadow-sm
+           inline-flex items-center justify-center gap-2;
+    min-height: 44px;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-text border border-slate-200 px-5 py-3 rounded-xl font-medium
+           hover:bg-slate-50 active:scale-[0.98] transition-all duration-200
+           focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 shadow-sm
+           inline-flex items-center justify-center gap-2;
+    min-height: 44px;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl shadow-card p-5 border border-slate-100/80;
+  }
+  
+  .card-interactive {
+    @apply card hover:shadow-card-hover transition-all duration-200 cursor-pointer;
+  }
+  
+  .status-dot {
+    @apply w-3.5 h-3.5 rounded-full inline-block;
+  }
+  
+  .status-dot-taken {
+    @apply status-dot bg-success shadow-[0_0_8px_rgba(0,201,167,0.6)];
+  }
+  
+  .status-dot-missed {
+    @apply status-dot bg-danger shadow-[0_0_8px_rgba(255,107,107,0.6)];
+  }
+  
+  .status-dot-pending {
+    @apply status-dot bg-warning shadow-[0_0_8px_rgba(255,184,0,0.6)];
+  }
+  
+  .status-dot-reminder {
+    @apply status-dot bg-primary-500 shadow-[0_0_8px_rgba(42,125,225,0.6)];
+  }
+
+  /* LED Pulsing animation for smart pill organizer */
+  .led-glow-active {
+    animation: ledPulse 1.8s infinite ease-in-out;
+  }
+
+  @keyframes ledPulse {
+    0% {
+      box-shadow: 0 0 4px #00C9A7, 0 0 12px rgba(0, 201, 167, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 16px #00C9A7, 0 0 28px rgba(0, 201, 167, 0.8);
+    }
+    100% {
+      box-shadow: 0 0 4px #00C9A7, 0 0 12px rgba(0, 201, 167, 0.4);
+    }
+  }
+
+  .led-glow-warning {
+    animation: ledWarningPulse 1.5s infinite ease-in-out;
+  }
+
+  @keyframes ledWarningPulse {
+    0% {
+      box-shadow: 0 0 4px #FFB800, 0 0 12px rgba(255, 184, 0, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 16px #FFB800, 0 0 28px rgba(255, 184, 0, 0.8);
+    }
+    100% {
+      box-shadow: 0 0 4px #FFB800, 0 0 12px rgba(255, 184, 0, 0.4);
+    }
+  }
+
+  .led-glow-alert {
+    animation: ledAlertPulse 1s infinite ease-in-out;
+  }
+
+  @keyframes ledAlertPulse {
+    0% {
+      box-shadow: 0 0 6px #FF6B6B, 0 0 14px rgba(255, 107, 107, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 20px #FF6B6B, 0 0 35px rgba(255, 107, 107, 0.9);
+    }
+    100% {
+      box-shadow: 0 0 6px #FF6B6B, 0 0 14px rgba(255, 107, 107, 0.5);
+    }
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F7FC;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
