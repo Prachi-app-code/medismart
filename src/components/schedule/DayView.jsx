@@ -13,6 +13,28 @@ export default function DayView({ selectedDate, onEditMed }) {
     return d.status === statusFilter;
   });
 
+  if (todayDoses.length === 0) {
+    return (
+      <div className="bg-white rounded-3xl p-12 border border-slate-100 shadow-card text-center space-y-4">
+        <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-3xl flex items-center justify-center mx-auto">
+          <Filter className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-xl font-bold text-text">No Medications Scheduled</h3>
+          <p className="text-sm text-slate-500 max-w-sm mx-auto">
+            You haven't added any prescriptions to your schedule yet. Add a medication to begin tracking your doses.
+          </p>
+        </div>
+        <a
+          href="/add"
+          className="btn-primary text-sm px-6 py-3 inline-flex items-center gap-2 shadow-md"
+        >
+          <span>+ Add Your First Medication</span>
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       
