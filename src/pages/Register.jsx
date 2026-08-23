@@ -17,7 +17,7 @@ export default function Register() {
   const [doctorName, setDoctorName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +36,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await signUp({
+      const data = await signUp({
         email,
         password,
         fullName,
@@ -46,10 +46,16 @@ export default function Register() {
         doctorName
       });
 
+      if (data?.user && !data?.session && isConfigured) {
+        setSuccessMessage('Account created! A confirmation email has been sent to your address. Redirecting to login...');
+      } else {
+        setSuccessMessage('Account created successfully! Redirecting to your dashboard...');
+      }
+
       setSuccess(true);
       setTimeout(() => {
-        navigate('/');
-      }, 1500);
+        navigate(data?.session || !isConfigured ? '/' : '/login');
+      }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
@@ -73,10 +79,10 @@ export default function Register() {
         </div>
 
         {/* Success Alert */}
-        {success && (
+        {successMessage && (
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm flex items-center gap-2.5 animate-fadeIn">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span>Account created successfully! Redirecting to your dashboard...</span>
+            <span>{successMessage}</span>
           </div>
         )}
 
